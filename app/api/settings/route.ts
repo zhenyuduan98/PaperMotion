@@ -11,8 +11,19 @@ import { loadSettings, saveSettings, type AppSettings } from "@/lib/settings-sto
 
 export const runtime = "nodejs";
 
+function publicSettings(settings: AppSettings) {
+  const { piApiKey, geminiApiKey, ...safe } = settings;
+  return {
+    ...safe,
+    hasPiApiKey: !!piApiKey,
+    hasGeminiApiKey: !!geminiApiKey,
+    piApiKeyManaged: !!process.env.PI_API_KEY,
+    geminiApiKeyManaged: !!process.env.GEMINI_API_KEY,
+  };
+}
+
 export async function GET() {
-  return NextResponse.json(loadSettings());
+  return NextResponse.json(publicSettings(loadSettings()), { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(req: Request) {
@@ -33,7 +44,7 @@ export async function POST(req: Request) {
     codexModelSmart: typeof b.codexModelSmart === "string" ? b.codexModelSmart : current.codexModelSmart,
     codexEffortFast: typeof b.codexEffortFast === "string" ? b.codexEffortFast : current.codexEffortFast,
     codexEffortSmart: typeof b.codexEffortSmart === "string" ? b.codexEffortSmart : current.codexEffortSmart,
-    geminiApiKey: typeof b.geminiApiKey === "string" ? b.geminiApiKey : current.geminiApiKey,
+    geminiApiKey: process.env.GEMINI_API_KEY || (typeof b.geminiApiKey === "string" && b.geminiApiKey.trim() ? b.geminiApiKey.trim() : current.geminiApiKey),
     geminiModelFast: typeof b.geminiModelFast === "string" ? b.geminiModelFast : current.geminiModelFast,
     geminiModelSmart: typeof b.geminiModelSmart === "string" ? b.geminiModelSmart : current.geminiModelSmart,
     claudeModelFast: typeof b.claudeModelFast === "string" ? b.claudeModelFast : current.claudeModelFast,
@@ -47,7 +58,7 @@ export async function POST(req: Request) {
         ? b.maxRetries
         : current.maxRetries,
     piUrl: typeof b.piUrl === "string" ? b.piUrl : current.piUrl,
-    piApiKey: typeof b.piApiKey === "string" ? b.piApiKey : current.piApiKey,
+    piApiKey: process.env.PI_API_KEY || (typeof b.piApiKey === "string" && b.piApiKey.trim() ? b.piApiKey.trim() : current.piApiKey),
     piModelFast:
       typeof b.piModelFast === "string" ? b.piModelFast : current.piModelFast,
     piModelSmart:
@@ -60,5 +71,5 @@ export async function POST(req: Request) {
       ? b.theme
       : current.theme;
   saveSettings(next);
-  return NextResponse.json(next);
+  return NextResponse.json(publicSettings(next), { headers: { "Cache-Control": "no-store" } });
 }

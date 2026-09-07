@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
   // what we ship inside the Electron app. The Electron main process
   // launches it as a child node process on a free port; in pure-Next dev
   // (`next dev`) this setting is a no-op.
-  output: "standalone",
+  output: process.env.GETIT_WEB === "1" ? undefined : "standalone",
   // pdfjs-dist dynamically imports its worker via `import(this.workerSrc)`
   // with `webpackIgnore: true`. Next's standalone tracer can't see that,
   // so we tell it explicitly to include the worker file in the bundle.

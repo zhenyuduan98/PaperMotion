@@ -44,7 +44,7 @@ export type AppSettings = {
   piModelFast?: string;
   piModelSmart?: string;
   piProvider?: "ollama" | "gemini" | "openai" | "anthropic" | "custom";
-  piApiType?: "openai-completions" | "google-generative-ai" | "anthropic-messages";
+  piApiType?: "openai-completions" | "openai-responses" | "google-generative-ai" | "anthropic-messages";
   /** Appearance: explicit "light"/"dark", or "system" to follow the OS.
    *  Defaults to "light" when unset. */
   theme?: "light" | "dark" | "system";
@@ -64,15 +64,18 @@ function defaultsFromEnv(): AppSettings {
   else if (piUrl.includes("api.anthropic.com")) piProvider = "anthropic";
   else if (!piUrl.includes("localhost") && !piUrl.includes("127.0.0.1") && piUrl) piProvider = "custom";
   
-  let piApiType: "openai-completions" | "google-generative-ai" | "anthropic-messages" = "openai-completions";
+  let piApiType: NonNullable<AppSettings["piApiType"]> = "openai-completions";
   if (piProvider === "gemini") piApiType = "google-generative-ai";
   else if (piProvider === "anthropic") piApiType = "anthropic-messages";
+  if (process.env.PI_API_TYPE === "openai-responses") piApiType = "openai-responses";
 
   return {
     autoGenerate: AUTO_GENERATE_VIZ,
     maxRetries: MAX_VIZ_GEN_RETRIES,
     theme: "light",
-    provider: "codex",
+    provider: ["codex", "gemini", "claude", "pi"].includes(process.env.GETIT_DEFAULT_PROVIDER ?? "")
+      ? process.env.GETIT_DEFAULT_PROVIDER as AppSettings["provider"]
+      : "codex",
     codexModelFast: "gpt-5.5",
     codexModelSmart: "gpt-5.5",
     codexEffortFast: "low",
@@ -106,7 +109,7 @@ export function loadSettings(): AppSettings {
         : env.provider;
         
       const piUrl = typeof parsed.piUrl === "string" ? parsed.piUrl : env.piUrl;
-      const piApiKey = typeof parsed.piApiKey === "string" ? parsed.piApiKey : env.piApiKey;
+      const piApiKey = process.env.PI_API_KEY || (typeof parsed.piApiKey === "string" ? parsed.piApiKey : env.piApiKey);
       
       let piProvider = parsed.piProvider;
       if (!piProvider && piUrl) {
@@ -121,7 +124,7 @@ export function loadSettings(): AppSettings {
       if (!piApiType) {
         if (piProvider === "gemini") piApiType = "google-generative-ai";
         else if (piProvider === "anthropic") piApiType = "anthropic-messages";
-        else piApiType = "openai-completions";
+        else piApiType = env.piApiType;
       }
 
       const s: AppSettings = {
@@ -138,7 +141,7 @@ export function loadSettings(): AppSettings {
         codexModelSmart: typeof parsed.codexModelSmart === "string" ? parsed.codexModelSmart : env.codexModelSmart,
         codexEffortFast: typeof parsed.codexEffortFast === "string" ? parsed.codexEffortFast : env.codexEffortFast,
         codexEffortSmart: typeof parsed.codexEffortSmart === "string" ? parsed.codexEffortSmart : env.codexEffortSmart,
-        geminiApiKey: typeof parsed.geminiApiKey === "string" ? parsed.geminiApiKey : env.geminiApiKey,
+        geminiApiKey: process.env.GEMINI_API_KEY || (typeof parsed.geminiApiKey === "string" ? parsed.geminiApiKey : env.geminiApiKey),
         geminiModelFast: typeof parsed.geminiModelFast === "string" ? parsed.geminiModelFast : env.geminiModelFast,
         geminiModelSmart: typeof parsed.geminiModelSmart === "string" ? parsed.geminiModelSmart : env.geminiModelSmart,
         claudeModelFast: typeof parsed.claudeModelFast === "string" ? parsed.claudeModelFast : env.claudeModelFast,
@@ -191,7 +194,7 @@ export function saveSettings(s: AppSettings): void {
     codexModelSmart: s.codexModelSmart,
     codexEffortFast: s.codexEffortFast,
     codexEffortSmart: s.codexEffortSmart,
-    geminiApiKey: s.geminiApiKey,
+    geminiApiKey: process.env.GEMINI_API_KEY ? undefined : s.geminiApiKey,
     geminiModelFast: s.geminiModelFast,
     geminiModelSmart: s.geminiModelSmart,
     claudeModelFast: s.claudeModelFast,
@@ -199,7 +202,7 @@ export function saveSettings(s: AppSettings): void {
     claudeEffortFast: s.claudeEffortFast,
     claudeEffortSmart: s.claudeEffortSmart,
     piUrl: s.piUrl,
-    piApiKey: s.piApiKey,
+    piApiKey: process.env.PI_API_KEY ? undefined : s.piApiKey,
     piModelFast: s.piModelFast,
     piModelSmart: s.piModelSmart,
     piProvider: s.piProvider,

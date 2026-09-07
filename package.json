@@ -1,13 +1,17 @@
 {
-  "name": "get-it",
-  "productName": "Get It",
+  "name": "papermotion",
+  "productName": "PaperMotion",
   "version": "0.0.0",
-  "description": "Read it. See it. Get it. — the document-centred study companion.",
+  "description": "Bring Learning PDFs to Life",
   "author": {
     "name": "beltromatti",
     "email": "beltromatti@gmail.com"
   },
-  "homepage": "https://github.com/beltromatti/get-it",
+  "homepage": "https://github.com/zhenyuduan98/PaperMotion",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zhenyuduan98/PaperMotion.git"
+  },
   "license": "Apache-2.0",
   "private": true,
   "main": "electron/main.js",
@@ -15,6 +19,10 @@
     "dev": "npm run cleanup && npm run build && npm run electron:prepare && node scripts/launch.mjs",
     "build": "next build",
     "start": "next start",
+    "browser:dev": "cross-env GETIT_WEB=1 next dev --hostname 127.0.0.1 --port 3000",
+    "browser:build": "cross-env GETIT_WEB=1 next build",
+    "browser:start": "cross-env GETIT_WEB=1 next start --hostname 127.0.0.1 --port 3000",
+    "check:api": "node --env-file=.env.local scripts/check-api.mjs",
     "lint": "eslint",
     "generate-pdfs": "tsx scripts/generate-sample-pdfs.ts",
     "test:errors": "tsx scripts/test-error-handling.ts",

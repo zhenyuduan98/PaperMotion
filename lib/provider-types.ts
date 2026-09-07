@@ -14,7 +14,7 @@ export const PROVIDER_LABELS: Record<ProviderName, string> = {
   codex: "Codex CLI",
   gemini: "Gemini CLI",
   claude: "Claude Code",
-  pi: "Pi Coder (BYOK)",
+  pi: "Custom API (BYOK)",
 };
 
 /** CLI binary names used for PATH detection. */

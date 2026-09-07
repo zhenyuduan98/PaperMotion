@@ -98,7 +98,10 @@ function buildEnvAndProvider(settings: ReturnType<typeof loadSettings>): { env: 
         getit_byok: {
           baseUrl: settings.piUrl,
           api: apiType,
-          apiKey: settings.piApiKey || "dummy",
+          apiKey: settings.piApiKey
+            ? apiType === "google-generative-ai" ? "$GEMINI_API_KEY"
+              : apiType === "anthropic-messages" ? "$ANTHROPIC_API_KEY" : "$OPENAI_API_KEY"
+            : "dummy",
           models: [
             { id: settings.piModelFast || "llama3.2", reasoning: true },
             { id: settings.piModelSmart || "llama3.2", reasoning: true }
@@ -277,7 +280,12 @@ export async function runJsonPi<T>(
     "--print",
     "--provider", provider,
     "--model", model,
-    "--no-tools" // Hermetic execution, no side effects
+    "--no-tools", // Hermetic execution, no side effects
+    "--no-context-files",
+    "--no-extensions",
+    "--no-skills",
+    "--no-prompt-templates",
+    "--no-themes",
   ];
 
   console.log(`\x1b[34m[Pi Command] Running: ${binary} ${args.join(" ")}\x1b[0m`);
@@ -285,6 +293,7 @@ export async function runJsonPi<T>(
   try {
     const proc = execFileAsync(binary, args, {
       env,
+      windowsHide: true,
       signal: opts.signal,
       maxBuffer: 10 * 1024 * 1024,
     });
@@ -331,7 +340,12 @@ export async function runJsonInThreadPi<T>(args: {
     "--print",
     "--provider", provider,
     "--model", model,
-    "--no-tools"
+    "--no-tools",
+    "--no-context-files",
+    "--no-extensions",
+    "--no-skills",
+    "--no-prompt-templates",
+    "--no-themes",
   ];
 
   // If resuming, pass the session flag
@@ -348,6 +362,7 @@ export async function runJsonInThreadPi<T>(args: {
   try {
     const proc = execFileAsync(binary, cliArgs, {
       env,
+      windowsHide: true,
       signal: args.opts?.signal,
       maxBuffer: 10 * 1024 * 1024,
     });

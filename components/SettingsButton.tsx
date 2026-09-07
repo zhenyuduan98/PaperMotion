@@ -38,10 +38,14 @@ export type SettingsPayload = {
   claudeEffortSmart?: string;
   piUrl?: string;
   piApiKey?: string;
+  hasPiApiKey?: boolean;
+  hasGeminiApiKey?: boolean;
+  piApiKeyManaged?: boolean;
+  geminiApiKeyManaged?: boolean;
   piModelFast?: string;
   piModelSmart?: string;
   piProvider?: "ollama" | "gemini" | "openai" | "anthropic" | "custom";
-  piApiType?: "openai-completions" | "google-generative-ai" | "anthropic-messages";
+  piApiType?: "openai-completions" | "openai-responses" | "google-generative-ai" | "anthropic-messages";
   theme?: "light" | "dark" | "system";
 };
 
@@ -190,10 +194,11 @@ function SettingsPanel({ refreshKey }: { refreshKey: string }) {
   // PI specific
   const [piUrl, setPiUrl] = useState<string>("http://localhost:11434/v1");
   const [piApiKey, setPiApiKey] = useState<string>("");
+  const [keyStatus, setKeyStatus] = useState<Partial<SettingsPayload>>({});
   const [piModelFast, setPiModelFast] = useState<string>("llama3.2");
   const [piModelSmart, setPiModelSmart] = useState<string>("llama3.2");
   const [piProvider, setPiProvider] = useState<"ollama" | "gemini" | "openai" | "anthropic" | "custom">("ollama");
-  const [piApiType, setPiApiType] = useState<"openai-completions" | "google-generative-ai" | "anthropic-messages">("openai-completions");
+  const [piApiType, setPiApiType] = useState<NonNullable<SettingsPayload["piApiType"]>>("openai-completions");
 
   const [theme, setTheme] = useState<"light" | "dark" | "system" | undefined>();
   const hydratedRef = useRef(false);
@@ -221,6 +226,7 @@ function SettingsPanel({ refreshKey }: { refreshKey: string }) {
       .then((r) => r.json())
       .then((s: Partial<SettingsPayload>) => {
         if (cancelled) return;
+        setKeyStatus(s);
         if (typeof s.autoGenerate === "boolean") setAutoGenerate(s.autoGenerate);
         if (typeof s.maxRetries === "number") setMaxRetries(s.maxRetries);
         if (s.provider) setProvider(s.provider);
@@ -296,7 +302,7 @@ function SettingsPanel({ refreshKey }: { refreshKey: string }) {
   const handlePiProviderChange = useCallback((newProvider: "ollama" | "gemini" | "openai" | "anthropic" | "custom") => {
     setPiProvider(newProvider);
     let url = "";
-    let apiType: "openai-completions" | "google-generative-ai" | "anthropic-messages" = "openai-completions";
+    let apiType: NonNullable<SettingsPayload["piApiType"]> = "openai-completions";
     let modelFast = "";
     let modelSmart = "";
     
@@ -438,7 +444,8 @@ function SettingsPanel({ refreshKey }: { refreshKey: string }) {
             </label>
             <input
               type="password"
-              placeholder="AIzaSy... (Required for Gemini)"
+              placeholder={keyStatus.hasGeminiApiKey ? "Configured — leave blank to keep" : "AIzaSy... (Required for Gemini)"}
+              disabled={keyStatus.geminiApiKeyManaged}
               value={geminiApiKey}
               onChange={(e) => setGeminiApiKey(e.target.value)}
               className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-2.5 py-1.5 text-[12px] text-[var(--ink-900)] focus:border-[var(--accent-500)] focus:outline-none"
@@ -650,6 +657,7 @@ function SettingsPanel({ refreshKey }: { refreshKey: string }) {
               className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-2 py-1.5 text-[12px] font-medium text-[var(--ink-900)] focus:border-[var(--accent-500)] focus:outline-none"
             >
               <option value="openai-completions">OpenAI completions</option>
+              <option value="openai-responses">OpenAI Responses</option>
               <option value="google-generative-ai">Google Generative AI</option>
               <option value="anthropic-messages">Anthropic Messages</option>
             </select>
@@ -674,7 +682,8 @@ function SettingsPanel({ refreshKey }: { refreshKey: string }) {
               type="password"
               value={piApiKey}
               onChange={(e) => setPiApiKey(e.target.value)}
-              placeholder={getApiKeyPlaceholder()}
+              placeholder={keyStatus.piApiKeyManaged ? "Configured on server" : keyStatus.hasPiApiKey ? "Configured — leave blank to keep" : getApiKeyPlaceholder()}
+              disabled={keyStatus.piApiKeyManaged}
               className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-2.5 py-1.5 text-[12px] font-mono text-[var(--ink-900)] focus:border-[var(--accent-500)] focus:outline-none"
             />
           </div>
