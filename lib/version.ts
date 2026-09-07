@@ -4,7 +4,7 @@
  * The version is baked at build time from `package.json#version` into
  * the public env var NEXT_PUBLIC_APP_VERSION (see next.config.ts).
  * In dev / local installs the package.json version stays "0.0.0", so
- * the chip and welcome popup both render "v0.0.0" — only a CI build
+ * the version chip renders "v0.0.0" — only a CI build
  * triggered by a pushed git tag rewrites package.json to the real
  * release number ahead of `next build`.
  */
