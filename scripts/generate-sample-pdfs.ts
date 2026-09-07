@@ -1,6 +1,6 @@
 /**
  * Generate multi-page well-structured demo PDFs across several fields.
- * Output: public/pdfs/{anatomy,physics,costituzione,calculus,chemistry}.pdf
+ * Output: public/pdfs/{anatomy,physics,calculus,chemistry}.pdf
  *
  * Each PDF is a textbook-style chapter with realistic content packed with
  * concepts that map naturally to one of Get It.'s visualizer render modes:
@@ -95,44 +95,6 @@ const docs: DocSpec[] = [
           "A projectile launched with initial speed v_0 at an angle alpha above the horizontal, in the absence of air resistance, follows a parabolic trajectory. Decomposing the velocity into horizontal and vertical components yields v_x = v_0 cos(alpha), constant in time, and v_y(t) = v_0 sin(alpha) - g t. Integrating gives x(t) = v_0 cos(alpha) t and y(t) = v_0 sin(alpha) t - (1/2) g t^2.",
           "The range R, time of flight T, and maximum height H follow directly: R = v_0^2 sin(2 alpha) / g, T = 2 v_0 sin(alpha) / g, and H = v_0^2 sin^2(alpha) / (2 g). The range is maximized at alpha = 45 degrees on level ground; it decreases symmetrically on either side. Plotting R as a function of alpha for a fixed v_0 produces a sinusoidal curve peaking at the optimal angle.",
           "Real projectiles are subject to drag, which depends nonlinearly on speed. At low Reynolds numbers the drag force scales linearly with velocity, while at high speeds it scales as v^2. The resulting trajectories are no longer parabolic — they become asymmetric, with shortened range and a reduced impact angle compared with the ideal case.",
-        ],
-      },
-    ],
-  },
-
-  // ─────────────────────────────────────────────────────────────────────
-  {
-    filename: "costituzione.pdf",
-    title: "La Costituzione della Repubblica Italiana",
-    subtitle: "Estratti commentati — Principi fondamentali e diritti civili",
-    author: "Get It. Edizioni Giuridiche",
-    sections: [
-      {
-        heading: "Articolo 1 — Forma della Repubblica",
-        paragraphs: [
-          "L'Italia è una Repubblica democratica, fondata sul lavoro. La sovranità appartiene al popolo, che la esercita nelle forme e nei limiti della Costituzione. Il riferimento al lavoro come elemento fondante esprime il rifiuto di gerarchie ereditarie e l'aspirazione a una società in cui la dignità della persona si realizzi attraverso l'attività produttiva, intellettuale o di cura.",
-          "L'articolo 1 si lega indissolubilmente all'articolo 3, che riconosce pari dignità sociale e uguaglianza davanti alla legge a tutti i cittadini, senza distinzione di sesso, razza, lingua, religione, opinioni politiche, condizioni personali e sociali. Tale principio di uguaglianza, formale e sostanziale, è stato ripetutamente richiamato dalla Corte costituzionale, ad esempio nella sentenza n. 1/2014 in tema di legge elettorale.",
-        ],
-      },
-      {
-        heading: "Articolo 11 — Ripudio della guerra",
-        paragraphs: [
-          "L'Italia ripudia la guerra come strumento di offesa alla libertà degli altri popoli e come mezzo di risoluzione delle controversie internazionali; consente, in condizioni di parità con gli altri Stati, alle limitazioni di sovranità necessarie ad un ordinamento che assicuri la pace e la giustizia fra le Nazioni; promuove e favorisce le organizzazioni internazionali rivolte a tale scopo.",
-          "La seconda parte dell'articolo costituisce la base costituzionale della partecipazione italiana all'Unione europea e alle Nazioni Unite. La giurisprudenza della Corte costituzionale, in particolare la sentenza n. 170/1984 (Granital), ha riconosciuto la prevalenza del diritto comunitario direttamente applicabile sulle norme interne contrastanti, fondandosi proprio sull'articolo 11 letto in combinato disposto con l'articolo 117.",
-        ],
-      },
-      {
-        heading: "Articolo 21 — Libertà di manifestazione del pensiero",
-        paragraphs: [
-          "Tutti hanno diritto di manifestare liberamente il proprio pensiero con la parola, lo scritto e ogni altro mezzo di diffusione. La stampa non può essere soggetta ad autorizzazioni o censure. Si può procedere a sequestro soltanto per atto motivato dell'autorità giudiziaria nel caso di delitti, per i quali la legge sulla stampa espressamente lo autorizzi.",
-          "Il quinto comma vieta le pubblicazioni a stampa, gli spettacoli e tutte le altre manifestazioni contrarie al buon costume. La legge stabilisce provvedimenti adeguati a prevenire e a reprimere le violazioni. La Corte costituzionale ha precisato il bilanciamento con altri diritti — onore, riservatezza, sicurezza pubblica — nelle sentenze n. 86/1974 e n. 138/1985.",
-        ],
-      },
-      {
-        heading: "Articolo 32 — Tutela della salute",
-        paragraphs: [
-          "La Repubblica tutela la salute come fondamentale diritto dell'individuo e interesse della collettività, e garantisce cure gratuite agli indigenti. Nessuno può essere obbligato a un determinato trattamento sanitario se non per disposizione di legge. La legge non può in nessun caso violare i limiti imposti dal rispetto della persona umana.",
-          "L'articolo è stato richiamato dalla Corte nella sentenza n. 5/2018 sull'obbligo vaccinale e nella ben nota sentenza n. 242/2019 sul fine vita. Il bilanciamento tra autodeterminazione individuale e tutela della collettività rappresenta una delle questioni più delicate della giurisprudenza costituzionale recente.",
         ],
       },
     ],

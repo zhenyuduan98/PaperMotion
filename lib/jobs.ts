@@ -68,7 +68,6 @@ function docTitleFromFilename(filename: string): string {
   const FILENAME_TO_TITLE: Record<string, string> = {
     "anatomy.pdf": "Anatomy & Physiology",
     "physics.pdf": "Classical Mechanics",
-    "costituzione.pdf": "Costituzione Italiana",
     "calculus.pdf": "Differential & Integral Calculus",
     "chemistry.pdf": "Organic Chemistry",
   };

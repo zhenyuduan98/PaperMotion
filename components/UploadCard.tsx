@@ -13,7 +13,6 @@ import {
   FileText,
   FlaskConical,
   HeartPulse,
-  Scale,
   Sigma,
   BarChart3,
   SquareFunction,
@@ -38,7 +37,6 @@ type SampleIcon = {
 const SAMPLE_ICONS: Record<string, SampleIcon> = {
   anatomy: { Icon: HeartPulse, tone: "rose", label: "Anatomy" },
   physics: { Icon: Atom, tone: "amber", label: "Physics" },
-  costituzione: { Icon: Scale, tone: "emerald", label: "Constitution" },
   calculus: { Icon: SquareFunction, tone: "violet", label: "Calculus" },
   chemistry: { Icon: FlaskConical, tone: "sky", label: "Chemistry" },
 };
@@ -78,7 +76,6 @@ type LibraryRow = {
 const FILENAME_TO_TITLE: Record<string, string> = {
   "anatomy.pdf": "Anatomy & Physiology",
   "physics.pdf": "Classical Mechanics",
-  "costituzione.pdf": "Costituzione Italiana",
   "calculus.pdf": "Differential & Integral Calculus",
   "chemistry.pdf": "Organic Chemistry",
 };

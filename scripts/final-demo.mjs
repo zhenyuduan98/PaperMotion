@@ -5,7 +5,6 @@
  *   03-physics-formula.png a formula viz auto-selected
  *   04-anatomy-3d.png      heart 3D view
  *   05-chemistry-3d.png    methane tetrahedron
- *   06-costituzione-text.png Italian Constitution article + sources
  */
 
 import { chromium } from "playwright";
@@ -92,24 +91,6 @@ if (threeDClicked) {
   await page.waitForTimeout(2500);
   await page.screenshot({ path: `${OUT}/05-anatomy-3d.png`, fullPage: false });
   console.log("✓ 05-anatomy-3d.png");
-}
-
-// Costituzione → text
-await page.goto(BASE, { waitUntil: "networkidle" });
-await page.locator('button:has-text("Costituzione Italiana")').first().click();
-await page.waitForURL(/\/viewer\//);
-console.log("→ costituzione: waiting for text-source tag…");
-const t2 = Date.now();
-let textClicked = false;
-while (Date.now() - t2 < 4 * 60_000) {
-  const k = await findAndClickTagOfType(["2d-text"]);
-  if (k) { textClicked = true; break; }
-  await page.waitForTimeout(2500);
-}
-if (textClicked) {
-  await page.waitForTimeout(2500);
-  await page.screenshot({ path: `${OUT}/06-costituzione-text.png`, fullPage: false });
-  console.log(`✓ 06-costituzione-text.png after ${(Date.now()-t2)/1000}s`);
 }
 
 console.log(`\nErrors: ${errs.length}`);

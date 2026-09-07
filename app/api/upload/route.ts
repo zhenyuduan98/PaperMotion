@@ -42,7 +42,6 @@ const MARKDOWN_EXT = /\.(md|markdown|mdown|mkd|mdwn)$/i;
 const SAMPLE_NAME_TO_DOC_ID: Record<string, string> = {
   anatomy: "sample-anatomy",
   physics: "sample-physics",
-  costituzione: "sample-costituzione",
   calculus: "sample-calculus",
   chemistry: "sample-chemistry",
 };

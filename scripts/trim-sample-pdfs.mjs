@@ -23,7 +23,6 @@ const PDFS_DIR = path.join(REPO_ROOT, "public", "pdfs");
 const SAMPLES = [
   "anatomy.pdf",
   "physics.pdf",
-  "costituzione.pdf",
   "calculus.pdf",
   "chemistry.pdf",
 ];

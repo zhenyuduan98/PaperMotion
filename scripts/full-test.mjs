@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 import fs from "node:fs";
 
 const BASE = process.env.BASE_URL || "http://localhost:3457";
-const SAMPLES = (process.env.SAMPLES || "anatomy,physics,calculus,chemistry,costituzione").split(",");
+const SAMPLES = (process.env.SAMPLES || "anatomy,physics,calculus,chemistry").split(",");
 const OUT = "scripts/smoke-out";
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -15,7 +15,6 @@ const SAMPLE_TITLE = {
   physics: "Classical Mechanics",
   calculus: "Differential & Integral Calculus",
   chemistry: "Organic Chemistry",
-  costituzione: "Costituzione Italiana",
 };
 
 const browser = await chromium.launch({ headless: true });
