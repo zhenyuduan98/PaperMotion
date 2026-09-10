@@ -2,7 +2,7 @@
 
 **Bring Learning PDFs to Life**
 
-PaperMotion is a local web adaptation of [Get It.](https://github.com/beltromatti/get-it) by Mattia Beltrami and contributors. Open a learning PDF or Markdown document in your browser, explore its concepts through interactive visualizations, and study with document chat, flashcards, quizzes, and a knowledge graph.
+Open a learning PDF or Markdown document in your browser, explore its concepts through interactive visualizations, and study with document chat, flashcards, quizzes, and a knowledge graph.
 
 This repository packages the working browser version with a configurable, server-side AI connection. The original Get It. interface and desktop source are retained; this version focuses on local web use.
 
@@ -60,8 +60,3 @@ AI requests send the relevant document text and conversation to the API provider
 
 The local version has been checked with a production build, TypeScript, browser upload/PDF rendering, document chat with follow-up context, and flashcard generation. Real API checks require your own credentials.
 
-## Credits and license
-
-Based on [beltromatti/get-it](https://github.com/beltromatti/get-it), starting from upstream commit `ae0fa99`. Original authorship and copyright notices are preserved. The original project documentation is available in [README.upstream.md](README.upstream.md); its desktop releases and signing claims refer to the upstream project.
-
-Licensed under [Apache License 2.0](LICENSE).
