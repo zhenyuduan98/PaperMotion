@@ -1,5 +1,5 @@
 import type { CSSProperties, ComponentType } from "react";
-import { Activity, BarChart3, Box, FileText, Sigma, ListOrdered } from "lucide-react";
+import { Activity, BarChart3, Box, FileText, Sigma } from "lucide-react";
 
 import type { VizType } from "@/lib/schemas";
 
@@ -14,7 +14,6 @@ type VizTypeStyle = CSSProperties & {
 export const VIZ_LEGEND_ORDER = [
   "3d",
   "2d-anim",
-  "interactive",
   "formula",
   "graph",
   "2d-text",
@@ -28,7 +27,6 @@ export const VIZ_TYPE_META: Record<
     Icon: VizTypeIcon;
   }
 > = {
-  interactive: { label: "Step by Step", tone: "sky", Icon: ListOrdered },
   "3d": { label: "3D Model", tone: "rose", Icon: Box },
   "2d-anim": { label: "Animation", tone: "amber", Icon: Activity },
   "2d-text": { label: "Source", tone: "emerald", Icon: FileText },

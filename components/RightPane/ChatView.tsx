@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/app-url";
+
 /**
  * Chat with the document.
  *
@@ -36,7 +38,7 @@ export default function ChatView({ docId }: Props) {
   // Initial fetch + handle prefill from a "Chat about this concept" jump
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/chat/${docId}`)
+    appFetch(`/api/chat/${docId}`)
       .then((r) => r.json())
       .then(async (j: { chats: ChatThread[] }) => {
         if (cancelled) return;
@@ -45,7 +47,7 @@ export default function ChatView({ docId }: Props) {
         const prefill = consumePrefill(docId, "chat");
         if (prefill) {
           // Create a fresh chat for this concept and seed the draft.
-          const r = await fetch(`/api/chat/${docId}`, {
+          const r = await appFetch(`/api/chat/${docId}`, {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ action: "create", title: prefill }),
@@ -83,7 +85,7 @@ export default function ChatView({ docId }: Props) {
   const createChat = useCallback(async () => {
     setCreating(true);
     try {
-      const r = await fetch(`/api/chat/${docId}`, {
+      const r = await appFetch(`/api/chat/${docId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "create" }),
@@ -98,7 +100,7 @@ export default function ChatView({ docId }: Props) {
 
   const deleteChat = useCallback(
     async (id: string) => {
-      await fetch(`/api/chat/${docId}?chatId=${encodeURIComponent(id)}`, {
+      await appFetch(`/api/chat/${docId}?chatId=${encodeURIComponent(id)}`, {
         method: "DELETE",
       });
       setChats((prev) => (prev ? prev.filter((c) => c.id !== id) : prev));
@@ -117,7 +119,7 @@ export default function ChatView({ docId }: Props) {
       setSending(true);
       setFailed(null);
       try {
-        const r = await fetch(`/api/chat/${docId}`, {
+        const r = await appFetch(`/api/chat/${docId}`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ action: "send", chatId, message }),
@@ -151,7 +153,7 @@ export default function ChatView({ docId }: Props) {
     let chatId = activeId;
     if (!chatId) {
       // Auto-create a chat on first send.
-      const r = await fetch(`/api/chat/${docId}`, {
+      const r = await appFetch(`/api/chat/${docId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "create" }),

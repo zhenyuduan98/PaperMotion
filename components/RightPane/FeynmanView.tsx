@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/app-url";
+
 /**
  * Feynman method — voice mode.
  *
@@ -54,7 +56,7 @@ export default function FeynmanView({ docId }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/feynman/${docId}`)
+    appFetch(`/api/feynman/${docId}`)
       .then((r) => r.json())
       .then((j: { sessions: FeynmanSession[]; maxTurns: number }) => {
         if (cancelled) return;
@@ -89,7 +91,7 @@ export default function FeynmanView({ docId }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const r = await fetch(`/api/feynman/${docId}`, {
+      const r = await appFetch(`/api/feynman/${docId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "start", topic: t }),
@@ -140,7 +142,7 @@ export default function FeynmanView({ docId }: Props) {
       setPendingChildPrompt(null);
       setPendingBySession((prev) => ({ ...prev, [sessionId]: null }));
       try {
-        const r = await fetch(`/api/feynman/${docId}`, {
+        const r = await appFetch(`/api/feynman/${docId}`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
@@ -189,7 +191,7 @@ export default function FeynmanView({ docId }: Props) {
 
   const deleteSession = useCallback(
     async (id: string) => {
-      await fetch(`/api/feynman/${docId}?sessionId=${encodeURIComponent(id)}`, {
+      await appFetch(`/api/feynman/${docId}?sessionId=${encodeURIComponent(id)}`, {
         method: "DELETE",
       });
       setSessions((prev) => (prev ? prev.filter((s) => s.id !== id) : prev));

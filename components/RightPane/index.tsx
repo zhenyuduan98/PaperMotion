@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/app-url";
+
 /**
  * Right-pane shell.
  *
@@ -38,11 +40,6 @@ import TwoDAnimView from "@/components/Visualizer/TwoDAnimView";
 import TwoDTextView from "@/components/Visualizer/TwoDTextView";
 import FormulaView from "@/components/Visualizer/FormulaView";
 import GraphView from "@/components/Visualizer/GraphView";
-import InteractiveView from "@/components/Visualizer/InteractiveView";
-import RevisionPanel from "@/components/Visualizer/RevisionPanel";
-import EvidenceView from "@/components/Visualizer/EvidenceView";
-import type { EvidenceHighlight } from "@/lib/evidence-types";
-import type { PersistedTagServer } from "@/lib/tags-store";
 import VizLegendIcon from "@/components/Visualizer/VizLegendIcon";
 import {
   VIZ_LEGEND_ORDER,
@@ -115,11 +112,6 @@ type Props = {
   providerLabel?: string;
   // Visualizer-only props (forwarded as-is from the orchestrator)
   visualizer: {
-    tag?: PersistedTagServer;
-    onUpdate?: (tag: PersistedTagServer) => void;
-    onDelete?: (tagId: string) => void;
-    onShowPassage?: (highlight: EvidenceHighlight) => Promise<void>;
-    onClearPassage?: () => void;
     spec: VizSpec | null;
     loading: boolean;
     emptyHint?: string;
@@ -145,9 +137,7 @@ export default function RightPane({ docId, mode, onModeChange, visualizer, provi
 
       <div className="relative min-h-0 flex-1 bg-[var(--surface-raised)]">
         {mode === "visualizer" && (
-          <EvidenceView key={`${visualizer.tag?.id}-${visualizer.tag?.revision ?? 0}`} evidence={visualizer.spec && "evidence" in visualizer.spec ? visualizer.spec.evidence : undefined} onShowPassage={visualizer.onShowPassage} onClearPassage={visualizer.onClearPassage}>
           <VisualizerBody
-            key={visualizer.tag?.id}
             spec={visualizer.spec}
             loading={visualizer.loading}
             emptyHint={visualizer.emptyHint}
@@ -155,7 +145,6 @@ export default function RightPane({ docId, mode, onModeChange, visualizer, provi
             onRuntimeError={visualizer.onRuntimeError}
             providerLabel={providerLabel}
           />
-          </EvidenceView>
         )}
         {mode === "graph" && (
           <KnowledgeGraphView
@@ -202,7 +191,6 @@ export default function RightPane({ docId, mode, onModeChange, visualizer, provi
           )}
         </div>
       )}
-      {mode === "visualizer" && visualizer.tag && visualizer.onUpdate && <RevisionPanel key={visualizer.tag.id} docId={docId} tag={visualizer.tag} onUpdate={visualizer.onUpdate} onDelete={visualizer.onDelete} />}
     </div>
   );
 }
@@ -263,7 +251,7 @@ function Header({
   const downloadWorkContext = async () => {
     setDownloading(true);
     try {
-      const r = await fetch(`/api/work-context/${docId}`, { cache: "no-store" });
+      const r = await appFetch(`/api/work-context/${docId}`, { cache: "no-store" });
       if (!r.ok) throw new Error(`download failed (${r.status})`);
       const data = await r.json();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -511,8 +499,7 @@ function VisualizerBody({
           transition={{ duration: 0.2 }}
           className="absolute inset-0"
         >
-              {spec.type === "interactive" && <InteractiveView key={JSON.stringify(spec)} spec={spec} />}
-              {spec.type === "3d" && <ThreeDView spec={spec} onRuntimeError={onRuntimeError} />}
+          {spec.type === "3d" && <ThreeDView spec={spec} onRuntimeError={onRuntimeError} />}
           {spec.type === "2d-anim" && <TwoDAnimView spec={spec} onRuntimeError={onRuntimeError} />}
           {spec.type === "2d-text" && <TwoDTextView spec={spec} />}
           {spec.type === "formula" && <FormulaView spec={spec} />}

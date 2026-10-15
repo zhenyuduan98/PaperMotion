@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/app-url";
+
 /**
  * Quizzes.
  *
@@ -46,7 +48,7 @@ export default function QuizzesView({ docId }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/quizzes/${docId}`)
+    appFetch(`/api/quizzes/${docId}`)
       .then((r) => r.json())
       .then((j: { sessions: QuizSession[] }) => {
         if (cancelled) return;
@@ -77,7 +79,7 @@ export default function QuizzesView({ docId }: Props) {
     setGenerating(true);
     setError(null);
     try {
-      const r = await fetch(`/api/quizzes/${docId}`, {
+      const r = await appFetch(`/api/quizzes/${docId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "generate", topic: topic.trim() || "all" }),
@@ -121,7 +123,7 @@ export default function QuizzesView({ docId }: Props) {
           : prev,
       );
       try {
-        await fetch(`/api/quizzes/${docId}`, {
+        await appFetch(`/api/quizzes/${docId}`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
@@ -147,7 +149,7 @@ export default function QuizzesView({ docId }: Props) {
     }
     // Last question answered — end session and surface the summary.
     try {
-      const r = await fetch(`/api/quizzes/${docId}`, {
+      const r = await appFetch(`/api/quizzes/${docId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "end", sessionId: active.id }),
@@ -167,7 +169,7 @@ export default function QuizzesView({ docId }: Props) {
 
   const deleteSession = useCallback(
     async (id: string) => {
-      await fetch(`/api/quizzes/${docId}?sessionId=${encodeURIComponent(id)}`, {
+      await appFetch(`/api/quizzes/${docId}?sessionId=${encodeURIComponent(id)}`, {
         method: "DELETE",
       });
       setSessions((prev) => (prev ? prev.filter((s) => s.id !== id) : prev));

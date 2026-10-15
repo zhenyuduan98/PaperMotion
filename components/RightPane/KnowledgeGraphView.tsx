@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/app-url";
+
 /**
  * Knowledge graph view.
  *
@@ -39,7 +41,7 @@ export default function KnowledgeGraphView({ docId, onJumpToTool, providerLabel 
 
   const fetchState = useCallback(async (): Promise<KnowledgeGraph | null> => {
     try {
-      const r = await fetch(`/api/kg/${docId}/state`, { cache: "no-store" });
+      const r = await appFetch(`/api/kg/${docId}/state`, { cache: "no-store" });
       if (!r.ok) throw new Error(`state ${r.status}`);
       const j = (await r.json()) as KnowledgeGraph;
       setKg(j);
@@ -60,7 +62,7 @@ export default function KnowledgeGraphView({ docId, onJumpToTool, providerLabel 
       if (initial.status === "missing") {
         setBuilding(true);
         try {
-          await fetch(`/api/kg/${docId}/build`, { method: "POST" });
+          await appFetch(`/api/kg/${docId}/build`, { method: "POST" });
           await fetchState();
         } catch (e) {
           setLoadError((e as Error).message);
@@ -122,7 +124,7 @@ export default function KnowledgeGraphView({ docId, onJumpToTool, providerLabel 
           onClick={async () => {
             setBuilding(true);
             try {
-              await fetch(`/api/kg/${docId}/build`, { method: "POST" });
+              await appFetch(`/api/kg/${docId}/build`, { method: "POST" });
               await fetchState();
             } finally {
               setBuilding(false);

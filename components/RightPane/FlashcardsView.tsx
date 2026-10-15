@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/app-url";
+
 /**
  * Flashcards.
  *
@@ -81,7 +83,7 @@ export default function FlashcardsView({ docId }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/flashcards/${docId}`)
+    appFetch(`/api/flashcards/${docId}`)
       .then((r) => r.json())
       .then((j: { sessions: FlashcardSession[] }) => {
         if (cancelled) return;
@@ -116,7 +118,7 @@ export default function FlashcardsView({ docId }: Props) {
     setGenerating(true);
     setError(null);
     try {
-      const r = await fetch(`/api/flashcards/${docId}`, {
+      const r = await appFetch(`/api/flashcards/${docId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "generate", topic: topic.trim() || "all" }),
@@ -159,7 +161,7 @@ export default function FlashcardsView({ docId }: Props) {
           : prev,
       );
       try {
-        await fetch(`/api/flashcards/${docId}`, {
+        await appFetch(`/api/flashcards/${docId}`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
@@ -177,7 +179,7 @@ export default function FlashcardsView({ docId }: Props) {
       const nextIdx = idx + 1;
       if (nextIdx >= active.cards.length) {
         try {
-          const r = await fetch(`/api/flashcards/${docId}`, {
+          const r = await appFetch(`/api/flashcards/${docId}`, {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ action: "end", sessionId: active.id }),
@@ -210,7 +212,7 @@ export default function FlashcardsView({ docId }: Props) {
 
   const deleteSession = useCallback(
     async (id: string) => {
-      await fetch(`/api/flashcards/${docId}?sessionId=${encodeURIComponent(id)}`, {
+      await appFetch(`/api/flashcards/${docId}?sessionId=${encodeURIComponent(id)}`, {
         method: "DELETE",
       });
       setSessions((prev) => (prev ? prev.filter((s) => s.id !== id) : prev));

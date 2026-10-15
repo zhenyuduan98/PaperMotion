@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/app-url";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -105,11 +107,11 @@ export default function UploadCard() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/sample-pdfs")
+    appFetch("/api/sample-pdfs")
       .then((r) => r.json())
       .then((j) => { if (!cancelled) setSamples(j.samples || []); })
       .catch(() => {});
-    fetch("/api/library", { cache: "no-store" })
+    appFetch("/api/library", { cache: "no-store" })
       .then((r) => r.json())
       .then((j: { docs?: LibraryRow[] }) => { if (!cancelled) setLibrary(j.docs ?? []); })
       .catch(() => {});
@@ -125,7 +127,7 @@ export default function UploadCard() {
       try {
         const fd = new FormData();
         fd.set("sample", id);
-        const r = await fetch("/api/upload", { method: "POST", body: fd });
+        const r = await appFetch("/api/upload", { method: "POST", body: fd });
         if (!r.ok) throw new Error((await r.json()).error ?? "upload failed");
         const j = await r.json();
         router.push(`/viewer/${j.docId}`);
@@ -148,7 +150,7 @@ export default function UploadCard() {
       try {
         const fd = new FormData();
         fd.set("file", file);
-        const r = await fetch("/api/upload", { method: "POST", body: fd });
+        const r = await appFetch("/api/upload", { method: "POST", body: fd });
         if (!r.ok) throw new Error((await r.json()).error ?? "upload failed");
         const j = await r.json();
         router.push(`/viewer/${j.docId}`);

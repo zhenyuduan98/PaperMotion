@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "pdfjs-dist/web/pdf_viewer.css";
 @plugin "@tailwindcss/typography";
 
 /* Bind Tailwind's `dark:` variant to our `.dark` class (set on <html> by the

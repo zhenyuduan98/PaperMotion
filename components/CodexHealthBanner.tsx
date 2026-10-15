@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/app-url";
+
 /**
  * AI provider health banner.
  *
@@ -84,8 +86,8 @@ export default function CodexHealthBanner() {
     const fetchOnce = async () => {
       try {
         const [healthRes, settingsRes] = await Promise.all([
-          fetch("/api/codex/health", { cache: "no-store" }),
-          fetch("/api/settings", { cache: "no-store" }),
+          appFetch("/api/codex/health", { cache: "no-store" }),
+          appFetch("/api/settings", { cache: "no-store" }),
         ]);
         if (cancelled) return;
         if (healthRes.ok) {
@@ -118,10 +120,6 @@ export default function CodexHealthBanner() {
   const label = PROVIDER_LABELS[provider];
 
   const handleReconnect = useCallback(async () => {
-    if (provider === "copilot") {
-      window.open("https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli", "_blank", "noopener,noreferrer");
-      return;
-    }
     if (!window.getit?.runCodexSetup) {
       alert("Please open Settings to re-configure your provider.");
       return;
@@ -132,7 +130,7 @@ export default function CodexHealthBanner() {
     } finally {
       setReconnecting(false);
     }
-  }, [provider]);
+  }, []);
 
   const view = useMemo(() => {
     if (!health || health.ok) return null;
@@ -154,9 +152,7 @@ export default function CodexHealthBanner() {
         ? `${label} needs a sign-in`
         : `${label} is missing`;
     body =
-      provider === "copilot"
-        ? view.message ?? "Run copilot login in your terminal, then retry."
-        : view.kind === "auth_lost"
+      view.kind === "auth_lost"
         ? `Your ${label} session expired or signed out. Re-connect to keep working — your data is safe.`
         : `We can't find the ${label} binary. ${provider === "codex" ? "Open the setup wizard to install it." : "Install it or check your PATH."}`;
       action = (
@@ -171,7 +167,7 @@ export default function CodexHealthBanner() {
         ) : (
           <KeyRound className="h-3 w-3" />
         )}
-        {provider === "copilot" ? "Setup Help" : provider === "codex" ? "Re-connect" : "Configure in Settings"}
+        {provider === "codex" ? "Re-connect" : "Configure in Settings"}
       </button>
     );
   } else if (view.kind === "model_unsupported") {
