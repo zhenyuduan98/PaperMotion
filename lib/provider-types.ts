@@ -7,7 +7,7 @@
  */
 
 /** The three supported AI backends. */
-export type ProviderName = "codex" | "gemini" | "claude" | "pi" | "copilot";
+export type ProviderName = "codex" | "gemini" | "claude" | "pi";
 
 /** Human-readable display names used in the UI. */
 export const PROVIDER_LABELS: Record<ProviderName, string> = {
@@ -15,7 +15,6 @@ export const PROVIDER_LABELS: Record<ProviderName, string> = {
   gemini: "Gemini CLI",
   claude: "Claude Code",
   pi: "Custom API (BYOK)",
-  copilot: "GitHub Copilot",
 };
 
 /** CLI binary names used for PATH detection. */
@@ -24,7 +23,6 @@ export const PROVIDER_BINARIES: Record<ProviderName, string> = {
   gemini: "gemini",
   claude: "claude",
   pi: "pi",
-  copilot: "copilot",
 };
 
 /** npm package names for auto-install. */
@@ -33,7 +31,6 @@ export const PROVIDER_PACKAGES: Record<ProviderName, string> = {
   gemini: "@google/gemini-cli",
   claude: "@anthropic-ai/claude-code",
   pi: "@earendil-works/pi-coding-agent",
-  copilot: "@github/copilot",
 };
 
 /**
@@ -49,7 +46,6 @@ export const PROVIDER_AUTH_KIND: Record<ProviderName, "account" | "apiKey"> = {
   claude: "account",
   gemini: "apiKey",
   pi: "apiKey",
-  copilot: "account",
 };
 
 /** Documentation URLs shown when auto-install fails. */
@@ -58,7 +54,6 @@ export const PROVIDER_DOCS: Record<ProviderName, string> = {
   gemini: "https://github.com/google-gemini/gemini-cli",
   claude: "https://docs.anthropic.com/en/docs/claude-code",
   pi: "https://github.com/beltromatti/get-it",
-  copilot: "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli",
 };
 
 export type RunOptions = {

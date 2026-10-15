@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/app-url";
+
 import { useCallback, useEffect } from "react";
 import { SETTINGS_EVENT } from "@/components/SettingsButton";
 
@@ -26,7 +28,7 @@ export default function ThemeProvider({
   // blocking inline script handles the system-preference fallback. This
   // component only reacts to live custom events and system preference changes.
   const reapply = useCallback(() => {
-    fetch("/api/settings", { cache: "no-store" })
+    appFetch("/api/settings", { cache: "no-store" })
       .then((r) => r.json())
       .then((s: { theme?: string }) => applyTheme(s.theme))
       .catch(() => {});

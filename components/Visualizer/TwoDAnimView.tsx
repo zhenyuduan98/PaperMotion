@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { compileFn } from "@/lib/viz-runtime";
 import type { TwoDAnimSpec } from "@/lib/schemas";
-import { Pause, Play, RotateCcw } from "lucide-react";
 
 type Props = {
   spec: TwoDAnimSpec;
@@ -16,10 +15,6 @@ export default function TwoDAnimView({ spec, onRuntimeError }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const reportedRef = useRef(false);
-  const playback = useRef({ playing: true, speed: 1 });
-  const [playing, setPlaying] = useState(true);
-  const [speed, setSpeed] = useState(1);
-  const [restart, setRestart] = useState(0);
 
   useEffect(() => {
     setError(null);
@@ -66,7 +61,6 @@ export default function TwoDAnimView({ spec, onRuntimeError }: Props) {
         | { draw?: DrawFn }
         | undefined;
       if (ret && typeof ret.draw === "function") drawCb = ret.draw;
-      else throw new Error("Animation must return a draw function.");
     } catch (e) {
       // warn (not error) — Next.js dev overlay treats console.error as
       // an "Issue". The orchestrator handles retries.
@@ -77,15 +71,13 @@ export default function TwoDAnimView({ spec, onRuntimeError }: Props) {
     // Contract: `time` and `dt` are in SECONDS (the generator prompt states this
     // explicitly). A spec that wrongly treats them as milliseconds appears
     // frozen — regenerate it (the prompt fix makes the new spec correct).
-    let elapsed = 0;
-    let firstFrame = true;
+    const t0 = performance.now();
     const tick = (now: number) => {
-      const dt = playback.current.playing ? Math.min((now - lastT) / 1000, 0.1) * playback.current.speed : 0;
+      const t = (now - t0) / 1000;
+      const dt = (now - lastT) / 1000;
       lastT = now;
-      elapsed += dt;
       try {
-        if (playback.current.playing || firstFrame) drawCb?.(ctx, container.clientWidth, container.clientHeight, elapsed, dt);
-        firstFrame = false;
+        drawCb?.(ctx, container.clientWidth, container.clientHeight, t, dt);
       } catch (e) {
         console.warn("2D anim draw threw (will be reported for repair):", e);
         reportError(`Animation crashed mid-frame: ${(e as Error).message}`);
@@ -95,7 +87,7 @@ export default function TwoDAnimView({ spec, onRuntimeError }: Props) {
     };
     raf = requestAnimationFrame(tick);
 
-    const ro = new ResizeObserver(() => { resize(); firstFrame = true; });
+    const ro = new ResizeObserver(resize);
     ro.observe(container);
 
     return () => {
@@ -105,23 +97,16 @@ export default function TwoDAnimView({ spec, onRuntimeError }: Props) {
     // onRuntimeError captured by closure; we don't want to remount on every
     // parent re-render that produces a new function reference.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec.setup_code, restart]);
+  }, [spec]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] px-3 py-2 text-[var(--ink-900)]">
-        <button className="tab-icon-btn" aria-label={playing ? "Pause animation" : "Play animation"} title={playing ? "Pause animation" : "Play animation"} onClick={() => { playback.current.playing = !playing; setPlaying(!playing); }}>{playing ? <Pause size={16} /> : <Play size={16} />}</button>
-        <button className="tab-icon-btn" aria-label="Restart animation" title="Restart animation" onClick={() => setRestart(value => value + 1)}><RotateCcw size={16} /></button>
-        <select aria-label="Animation speed" value={speed} onChange={event => { const next = Number(event.target.value); playback.current.speed = next; setSpeed(next); }} className="rounded border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-2 py-1 text-xs"><option value={0.5}>0.5x</option><option value={1}>1x</option><option value={2}>2x</option></select>
-      </div>
-    <div ref={containerRef} className="relative min-h-0 flex-1 w-full">
-      <canvas ref={canvasRef} role="img" aria-label="Animated visualization" className="h-full w-full" />
+    <div ref={containerRef} className="relative h-full w-full">
+      <canvas ref={canvasRef} className="h-full w-full" />
       {error && (
         <div className="absolute bottom-3 left-3 right-3 rounded-md border border-[var(--feedback-wrong-border)] bg-[var(--feedback-wrong-bg)] px-3 py-2 text-xs text-[var(--feedback-wrong-text)]">
           {error}
         </div>
       )}
-    </div>
     </div>
   );
 }

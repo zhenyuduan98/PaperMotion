@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/app-url";
+
 /**
  * Library page.
  *
@@ -68,7 +70,7 @@ export default function LibraryClient() {
   const reload = useCallback(async () => {
     setError(null);
     try {
-      const r = await fetch("/api/library", { cache: "no-store" });
+      const r = await appFetch("/api/library", { cache: "no-store" });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const j = (await r.json()) as { docs: LibraryRow[] };
       setRows(j.docs);
@@ -117,7 +119,7 @@ export default function LibraryClient() {
       }
       setDeleting(id);
       try {
-        const r = await fetch(`/api/library?id=${encodeURIComponent(id)}`, {
+        const r = await appFetch(`/api/library?id=${encodeURIComponent(id)}`, {
           method: "DELETE",
         });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);

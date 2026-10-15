@@ -37,6 +37,7 @@ async function complete<T>(messages: Message[], model: string, opts?: RunOptions
   try {
     response = await fetch(url, {
       method: "POST",
+      redirect: "error",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${settings.piApiKey}` },
       body: JSON.stringify(responses
         ? { model, input: messages, stream: false, store: false, text: { format: { type: "json_object" } }, reasoning: { effort: opts?.reasoning ?? "low" } }

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { compileFn } from "@/lib/viz-runtime";
 import type { ThreeDSpec } from "@/lib/schemas";
-import { fitSceneDistance } from "@/lib/viz-framing";
 
 type Props = {
   spec: ThreeDSpec;
@@ -35,8 +34,6 @@ export default function ThreeDView({ spec, onRuntimeError }: Props) {
     const height = mount.clientHeight;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.domElement.setAttribute("role", "img");
-    renderer.domElement.setAttribute("aria-label", "3D visualization");
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
     const isDark = document.documentElement.classList.contains("dark");
@@ -59,8 +56,6 @@ export default function ThreeDView({ spec, onRuntimeError }: Props) {
     let pitch = 0;
     let userInteracted = false;
     let camDist = 4;
-    let fittedDistance = 4;
-    let sceneRadius = 1;
     const onDown = (e: PointerEvent) => {
       isDragging = true;
       userInteracted = true;
@@ -84,7 +79,7 @@ export default function ThreeDView({ spec, onRuntimeError }: Props) {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       camDist *= 1 + e.deltaY * 0.001;
-      camDist = Math.max(fittedDistance * 0.25, Math.min(fittedDistance * 5, camDist));
+      camDist = Math.max(0.6, Math.min(20, camDist));
     };
     mount.addEventListener("pointerdown", onDown);
     window.addEventListener("pointermove", onMove);
@@ -129,11 +124,8 @@ export default function ThreeDView({ spec, onRuntimeError }: Props) {
         const center = new THREE.Vector3();
         bbox.getSize(size);
         bbox.getCenter(center);
-        sceneRadius = size.length() / 2 + 0.1;
-        fittedDistance = fitSceneDistance(sceneRadius, camera.fov, camera.aspect);
-        camDist = fittedDistance;
-        camera.far = Math.max(200, fittedDistance * 10);
-        camera.updateProjectionMatrix();
+        const radius = Math.max(size.x, size.y, size.z) * 0.6 + 0.3;
+        camDist = Math.max(2.0, radius * 2.4);
         // Re-center the group so orbit looks natural.
         group.position.sub(center);
       }
@@ -196,13 +188,8 @@ export default function ThreeDView({ spec, onRuntimeError }: Props) {
     const onResize = () => {
       const w = mount.clientWidth;
       const h = mount.clientHeight;
-      if (!w || !h) return;
       renderer.setSize(w, h);
-      const zoom = camDist / fittedDistance;
       camera.aspect = w / h;
-      fittedDistance = fitSceneDistance(sceneRadius, camera.fov, camera.aspect);
-      camDist = fittedDistance * zoom;
-      camera.far = Math.max(200, fittedDistance * 10);
       camera.updateProjectionMatrix();
     };
     const ro = new ResizeObserver(onResize);
@@ -233,7 +220,7 @@ export default function ThreeDView({ spec, onRuntimeError }: Props) {
     // doesn't tear down the WebGL context. The ref captures the latest one
     // through closure since it is stable across the spec lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec.setup_code]);
+  }, [spec]);
 
   // Theme reactivity: watch html.dark class and update the renderer clear
   // colour without tearing down the WebGL context.

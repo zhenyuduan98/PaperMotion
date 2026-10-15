@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/app-url";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -15,8 +17,6 @@ import {
 } from "lucide-react";
 
 import PdfViewer, { type Tag } from "@/components/PdfViewer";
-import type { PdfSelectionRequest } from "@/components/PdfSelectionTools";
-import type { EvidenceHighlight } from "@/lib/evidence-types";
 import RightPane, { type RightPaneMode } from "@/components/RightPane";
 import AccountButton from "@/components/AccountButton";
 import SettingsButton, { SETTINGS_EVENT } from "@/components/SettingsButton";
@@ -24,7 +24,6 @@ import TooltipChip from "@/components/TooltipChip";
 import type { DetectedConcept, VizSpec } from "@/lib/schemas";
 import { AUTO_GENERATE_VIZ, MAX_VIZ_GEN_RETRIES } from "@/lib/config";
 import { PROVIDER_LABELS, type ProviderName } from "@/lib/provider-types";
-import type { PersistedTagServer } from "@/lib/tags-store";
 
 type DocMeta = {
   docId: string;
@@ -34,7 +33,7 @@ type DocMeta = {
   pages: Array<{ pageIndex: number; width: number; height: number; text: string }>;
 };
 
-type TagState = Tag & Pick<PersistedTagServer, "revision" | "feedback" | "versions" | "versionId" | "versionAt"> & {
+type TagState = Tag & {
   concept: DetectedConcept;
   spec?: VizSpec;
   error?: string;
@@ -50,7 +49,6 @@ type TagsApiResponse = {
     tags: TagState[];
     activeTagId: string | null;
     pagesAnalyzed: number[];
-    deletedTagIds?: string[];
   } | null;
   detectionRunning: boolean;
   vizQueueRunning: boolean;
@@ -69,7 +67,6 @@ const POLL_FAST_MS = 1500;
 const POLL_IDLE_MS = 5000;
 
 export default function ViewerClient({ docId }: { docId: string }) {
-  const [mobilePane, setMobilePane] = useState<"document" | "study">("study");
   const [meta, setMeta] = useState<DocMeta | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -83,9 +80,6 @@ export default function ViewerClient({ docId }: { docId: string }) {
   const [detectionError, setDetectionError] = useState<string | undefined>();
 
   const [activeTagId, setActiveTagId] = useState<string | null>(null);
-  const [evidenceSelection, setEvidenceSelection] = useState<{ key: string; highlight: EvidenceHighlight } | null>(null);
-  const evidenceJump = useRef(0);
-  const deletedTagIds = useRef(new Set<string>());
 
   // Settings (auto-generate, max repair attempts) — start from env-baked
   // defaults, hydrate from /api/settings, react to `getit:settings`
@@ -96,13 +90,13 @@ export default function ViewerClient({ docId }: { docId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/settings", { cache: "no-store" })
+    appFetch("/api/settings", { cache: "no-store" })
       .then((r) => r.json())
       .then((s: { autoGenerate: boolean; maxRetries: number; provider?: ProviderName }) => {
         if (cancelled) return;
         if (typeof s.autoGenerate === "boolean") setAutoGenerate(s.autoGenerate);
         if (typeof s.maxRetries === "number") setMaxRetries(s.maxRetries);
-        if (s.provider === "codex" || s.provider === "gemini" || s.provider === "claude" || s.provider === "pi" || s.provider === "copilot")
+        if (s.provider === "codex" || s.provider === "gemini" || s.provider === "claude" || s.provider === "pi")
           setProvider(s.provider);
       })
       .catch(() => {});
@@ -119,7 +113,7 @@ export default function ViewerClient({ docId }: { docId: string }) {
       if (!detail) return;
       if (typeof detail.autoGenerate === "boolean") setAutoGenerate(detail.autoGenerate);
       if (typeof detail.maxRetries === "number") setMaxRetries(detail.maxRetries);
-      if (detail.provider === "codex" || detail.provider === "gemini" || detail.provider === "claude" || detail.provider === "pi" || detail.provider === "copilot")
+      if (detail.provider === "codex" || detail.provider === "gemini" || detail.provider === "claude" || detail.provider === "pi")
         setProvider(detail.provider);
     };
     window.addEventListener(SETTINGS_EVENT, onChange);
@@ -172,7 +166,7 @@ export default function ViewerClient({ docId }: { docId: string }) {
     (useKeepalive = false) => {
       if (!chatDirtyRef.current) return;
       chatDirtyRef.current = false;
-      void fetch(`/api/kg/${docId}/evaluate`, {
+      void appFetch(`/api/kg/${docId}/evaluate`, {
         method: "POST",
         keepalive: useKeepalive,
       }).catch(() => {});
@@ -200,7 +194,7 @@ export default function ViewerClient({ docId }: { docId: string }) {
   useEffect(() => {
     let cancelled = false;
     // Doc meta — without it the PdfViewer can't render.
-    fetch(`/api/doc/${docId}`)
+    appFetch(`/api/doc/${docId}`)
       .then(async (r) => {
         if (!r.ok) {
           throw new Error(
@@ -218,11 +212,11 @@ export default function ViewerClient({ docId }: { docId: string }) {
         if (!cancelled) setLoadError((e as Error).message);
       });
     // Touch (so library's "last opened" reflects this open).
-    void fetch(`/api/doc/${docId}/touch`, { method: "POST" }).catch(() => {});
+    void appFetch(`/api/doc/${docId}/touch`, { method: "POST" }).catch(() => {});
     // Kick the KG build (idempotent — server skips if ready).
-    void fetch(`/api/kg/${docId}/build`, { method: "POST" }).catch(() => {});
+    void appFetch(`/api/kg/${docId}/build`, { method: "POST" }).catch(() => {});
     // Kick the detection job (idempotent — server skips if running or done).
-    void fetch(`/api/jobs/detect/${docId}`, { method: "POST" }).catch(() => {});
+    void appFetch(`/api/jobs/detect/${docId}`, { method: "POST" }).catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -240,7 +234,7 @@ export default function ViewerClient({ docId }: { docId: string }) {
     let cancelled = false;
     const pollOnce = async () => {
       try {
-        const r = await fetch(`/api/tags/${docId}`, { cache: "no-store" });
+        const r = await appFetch(`/api/tags/${docId}`, { cache: "no-store" });
         if (!r.ok) return;
         const data = (await r.json()) as TagsApiResponse;
         if (cancelled) return;
@@ -255,19 +249,12 @@ export default function ViewerClient({ docId }: { docId: string }) {
         // Skip re-renders if savedAt hasn't moved (no real change).
         if (file.savedAt === lastSavedAtRef.current) return;
         lastSavedAtRef.current = file.savedAt;
-        for (const id of file.deletedTagIds ?? []) deletedTagIds.current.add(id);
-        setTags(previous => file.tags.filter(tag => !deletedTagIds.current.has(tag.id)).map(tag => {
-          const local = previous.find(item => item.id === tag.id);
-          return local && (local.revision ?? 0) > (tag.revision ?? 0) ? local : tag;
-        }));
+        setTags(file.tags as TagState[]);
         setPagesAnalyzed(new Set(file.pagesAnalyzed));
         // Only honor the server's active tag if the user hasn't picked
         // one locally yet — otherwise the server's stale value would
         // override a fresh click.
-        setActiveTagId((cur) => {
-          const candidate = cur ?? file.activeTagId;
-          return candidate && !deletedTagIds.current.has(candidate) ? candidate : null;
-        });
+        setActiveTagId((cur) => cur ?? file.activeTagId);
       } catch {
         /* network blip — try again next tick */
       }
@@ -288,7 +275,7 @@ export default function ViewerClient({ docId }: { docId: string }) {
   // hammer the API.
   useEffect(() => {
     const handle = setTimeout(() => {
-      void fetch(`/api/tags/${docId}`, {
+      void appFetch(`/api/tags/${docId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ activeTagId }),
@@ -304,20 +291,6 @@ export default function ViewerClient({ docId }: { docId: string }) {
     [meta],
   );
 
-  const evidenceKey = `${activeTagId}-${tags.find(tag => tag.id === activeTagId)?.revision ?? 0}`;
-  const evidenceHighlight = evidenceSelection?.key === evidenceKey && rightPaneMode === "visualizer" ? evidenceSelection.highlight : null;
-  function clearEvidencePassage() { evidenceJump.current++; setEvidenceSelection(null); }
-  async function showEvidencePassage(highlight: EvidenceHighlight) {
-    const jumpId = ++evidenceJump.current;
-    const page = meta?.pages.find(item => item.pageIndex === highlight.page);
-    if (highlight.docId !== docId || !page || page.text.slice(highlight.start, highlight.end) !== highlight.quote) throw new Error("The PDF text has changed or this evidence belongs to another document. Generate a new version.");
-    const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(page.text))), byte => byte.toString(16).padStart(2, "0")).join("");
-    if (hash !== highlight.pageHash) throw new Error("The source page has changed. Generate a new version before following this evidence.");
-    if (jumpId !== evidenceJump.current) return;
-    setEvidenceSelection({ key: evidenceKey, highlight });
-    setMobilePane("document");
-  }
-
   // Auto-select the first ready tag when nothing is selected yet.
   useEffect(() => {
     if (activeTagId) return;
@@ -331,7 +304,6 @@ export default function ViewerClient({ docId }: { docId: string }) {
   const handleTagClick = useCallback(
     (id: string) => {
       setActiveTagId(id);
-      setMobilePane("study");
       // Bring the Visualizer forward no matter which tool is open, so the
       // clicked concept renders (or starts rendering) where the user can see
       // it. Switching mode also runs the normal tab-change side effects —
@@ -340,7 +312,6 @@ export default function ViewerClient({ docId }: { docId: string }) {
       setRightPaneMode("visualizer");
       const tag = tags.find((t) => t.id === id);
       if (!tag) return;
-      if (!tag.spec && !autoGenerate) return;
       if (tag.generating) return; // already in flight — don't double-queue
       if (tag.spec && !tag.error) return; // already rendered — selecting is enough
       // Idle OR previously failed → (re)generate. Clearing any error optimistically
@@ -349,13 +320,13 @@ export default function ViewerClient({ docId }: { docId: string }) {
       setTags((prev) =>
         prev.map((t) => (t.id === id ? { ...t, generating: true, error: undefined } : t)),
       );
-      void fetch(`/api/jobs/viz/${docId}`, {
+      void appFetch(`/api/jobs/viz/${docId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ tagId: id }),
       }).catch(() => {});
     },
-    [docId, tags, autoGenerate],
+    [docId, tags],
   );
 
   // Visualizer reported a runtime error → single-attempt policy: surface the
@@ -376,7 +347,7 @@ export default function ViewerClient({ docId }: { docId: string }) {
             : t,
         ),
       );
-      void fetch(`/api/jobs/viz/${docId}`, {
+      void appFetch(`/api/jobs/viz/${docId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ tagId, runtimeError: message }),
@@ -384,18 +355,6 @@ export default function ViewerClient({ docId }: { docId: string }) {
     },
     [docId],
   );
-
-  async function handleGenerateSelection(selection: PdfSelectionRequest) {
-    const response = await fetch(`/api/viz/${encodeURIComponent(docId)}/selection`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(selection) });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || "Could not create the visualization.");
-    const tag = result.tag as TagState;
-    setTags(previous => [...previous.filter(item => item.id !== tag.id), tag]);
-    setActiveTagId(tag.id);
-    setVizQueueRunning(tag.generating);
-    setRightPaneMode("visualizer");
-    setMobilePane("study");
-  }
 
   // User asked to regenerate the active visualization from scratch (it looks
   // wrong, stopped animating, etc.). Unlike handleTagClick, this re-queues even
@@ -411,7 +370,7 @@ export default function ViewerClient({ docId }: { docId: string }) {
             : t,
         ),
       );
-      void fetch(`/api/jobs/viz/${docId}`, {
+      void appFetch(`/api/jobs/viz/${docId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ tagId }),
@@ -431,7 +390,7 @@ export default function ViewerClient({ docId }: { docId: string }) {
             : t,
         ),
       );
-      void fetch(`/api/jobs/viz/${docId}`, {
+      void appFetch(`/api/jobs/viz/${docId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ tagId }),
@@ -450,7 +409,7 @@ export default function ViewerClient({ docId }: { docId: string }) {
           : t,
       ),
     );
-    void fetch(`/api/jobs/viz/${docId}`, {
+    void appFetch(`/api/jobs/viz/${docId}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ retryFailed: true }),
@@ -469,7 +428,7 @@ export default function ViewerClient({ docId }: { docId: string }) {
         (t) => !t.spec && !t.error && !t.generating,
       );
       for (const t of idle) {
-        void fetch(`/api/jobs/viz/${docId}`, {
+        void appFetch(`/api/jobs/viz/${docId}`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ tagId: t.id }),
@@ -525,31 +484,29 @@ export default function ViewerClient({ docId }: { docId: string }) {
       {/* Top tab bar — Upload + Library pinned on the left, then the
           open-document tab (acts as the active "window"). Clicking
           Upload or Library navigates away, closing this doc tab. */}
-      <div className="tab-bar tab-bar--fused shrink-0 flex-wrap overflow-visible sm:flex-nowrap">
-        <div className="flex w-full min-w-0 items-center gap-0.5 overflow-x-auto sm:w-auto sm:flex-1" aria-label="Document navigation">
-          <TooltipChip tip="Upload a new PDF.">
-            <Link href="/" aria-label="Upload" className="tab-item">
-              <Upload className="h-3.5 w-3.5 text-[var(--ink-400)]" />
-              <span>Upload</span>
-            </Link>
-          </TooltipChip>
-          <TooltipChip tip="Your library of opened PDFs.">
-            <Link href="/library" aria-label="Open library" className="tab-item">
-              <BookOpen className="h-3.5 w-3.5 text-[var(--ink-400)]" />
-              <span>Library</span>
-            </Link>
-          </TooltipChip>
-          <div className="tab-item" data-active="true">
-            <FileText className="h-3.5 w-3.5 text-[var(--accent-600)]" />
-            <span className="max-w-[180px] truncate">{truncated}</span>
-            {!autoGenerate && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9.5px] font-medium uppercase tracking-wider text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
-                <MousePointerClick className="h-2.5 w-2.5" /> manual
-              </span>
-            )}
-          </div>
+      <div className="tab-bar tab-bar--fused shrink-0">
+        <TooltipChip tip="Upload a new PDF.">
+          <Link href="/" aria-label="Upload" className="tab-item">
+            <Upload className="h-3.5 w-3.5 text-[var(--ink-400)]" />
+            <span>Upload</span>
+          </Link>
+        </TooltipChip>
+        <TooltipChip tip="Your library of opened PDFs.">
+          <Link href="/library" aria-label="Open library" className="tab-item">
+            <BookOpen className="h-3.5 w-3.5 text-[var(--ink-400)]" />
+            <span>Library</span>
+          </Link>
+        </TooltipChip>
+        <div className="tab-item" data-active="true">
+          <FileText className="h-3.5 w-3.5 text-[var(--accent-600)]" />
+          <span className="max-w-[180px] truncate">{truncated}</span>
+          {!autoGenerate && (
+            <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9.5px] font-medium uppercase tracking-wider text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
+              <MousePointerClick className="h-2.5 w-2.5" /> manual
+            </span>
+          )}
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2 pr-1">
+        <div className="ml-auto flex items-center gap-2 pr-1">
           <KGStatusBadge docId={docId} />
           <TagsChip
             pagesDone={doneCount}
@@ -565,12 +522,8 @@ export default function ViewerClient({ docId }: { docId: string }) {
         </div>
       </div>
 
-      <div className="flex shrink-0 gap-1 border-b border-[var(--border-subtle)] px-2 py-1 lg:hidden" role="tablist" aria-label="Reader view">
-        <button type="button" role="tab" aria-selected={mobilePane === "document"} onClick={() => setMobilePane("document")} className={`flex flex-1 items-center justify-center gap-2 rounded px-3 py-2 text-xs ${mobilePane === "document" ? "bg-[var(--surface-raised)] text-[var(--ink-900)]" : "text-[var(--ink-500)]"}`}><FileText size={14} />Document</button>
-        <button type="button" role="tab" aria-selected={mobilePane === "study"} onClick={() => setMobilePane("study")} className={`flex flex-1 items-center justify-center gap-2 rounded px-3 py-2 text-xs ${mobilePane === "study" ? "bg-[var(--surface-raised)] text-[var(--ink-900)]" : "text-[var(--ink-500)]"}`}><BookOpen size={14} />Study</button>
-      </div>
       <div className="flex min-h-0 flex-1 gap-2 bg-[var(--surface-canvas)] p-2">
-        <div className={`${mobilePane === "document" ? "flex" : "hidden"} min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] lg:flex`}>
+        <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-raised)]">
           <PdfViewer
             pdfUrl={meta.pdfUrl}
             numPages={meta.numPages}
@@ -578,35 +531,22 @@ export default function ViewerClient({ docId }: { docId: string }) {
             tags={tags}
             activeTagId={activeTagId}
             onTagClick={handleTagClick}
-            onGenerateSelection={handleGenerateSelection}
-            evidenceHighlight={evidenceHighlight}
-            onClearEvidence={clearEvidencePassage}
-            onReturnToEvidence={() => setMobilePane("study")}
             detecting={detecting}
             providerLabel={PROVIDER_LABELS[provider]}
           />
         </div>
-        <div className={`${mobilePane === "study" ? "flex" : "hidden"} w-full min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-raised)] lg:flex lg:w-[44%] lg:min-w-[420px] lg:max-w-[720px]`}>
+        <div className="flex w-[44%] min-w-[420px] max-w-[720px] flex-col overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-raised)]">
           <RightPane
             docId={docId}
             mode={rightPaneMode}
             onModeChange={setRightPaneMode}
             providerLabel={PROVIDER_LABELS[provider]}
             visualizer={{
-              tag: activeTag ?? undefined,
-              onShowPassage: showEvidencePassage,
-              onClearPassage: clearEvidencePassage,
-              onUpdate: updated => setTags(previous => previous.map(tag => tag.id === updated.id ? updated : tag)),
-              onDelete: id => {
-                deletedTagIds.current.add(id);
-                setTags(previous => previous.filter(tag => tag.id !== id));
-                setActiveTagId(current => current === id ? null : current);
-              },
               spec: activeTag?.generating || activeTag?.error ? null : activeSpec,
               loading:
                 activeTag != null &&
                 !activeTag.error &&
-                activeTag.generating,
+                (activeTag.generating || !activeTag.spec),
               loadingDetail:
                 activeTag?.generating && (activeTag.attempts ?? 0) >= 1
                   ? `repairing — attempt ${(activeTag.attempts ?? 0) + 1} of ${maxRetries + 1}`
@@ -617,12 +557,12 @@ export default function ViewerClient({ docId }: { docId: string }) {
               emptyHint: activeTag?.error
                 ? "We weren't able to build a working visualization for this concept. Retry below, or pick another tag — most of them work cleanly."
                 : tags.length === 0
-                  ? detecting ? `${PROVIDER_LABELS[provider]} is reading the document — tags will appear inline as soon as they're detected.` : "No visualizations selected."
+                  ? `${PROVIDER_LABELS[provider]} is reading the document — tags will appear inline as soon as they're detected.`
                   : autoGenerate
                     ? "Click any colored tag in the document to render its concept here."
-                    : activeTag ? `${activeTag.label}: not generated` : "Select a concept",
+                    : "Click any tag to generate its visualization. (manual mode — toggle auto-generate in settings)",
               activeTagError: activeTag?.error ?? null,
-              onRetry: activeTag ? () => handleRetryTag(activeTag.id) : undefined,
+              onRetry: activeTag ? () => handleTagClick(activeTag.id) : undefined,
               onRegenerate:
                 activeTag && activeTag.spec && !activeTag.generating
                   ? () => handleRegenerateTag(activeTag.id)
@@ -719,7 +659,7 @@ function KGStatusBadge({ docId }: { docId: string }) {
     let cancelled = false;
     const fetchOnce = async () => {
       try {
-        const r = await fetch(`/api/kg/${docId}/state`, { cache: "no-store" });
+        const r = await appFetch(`/api/kg/${docId}/state`, { cache: "no-store" });
         if (!r.ok) throw new Error(String(r.status));
         const j = (await r.json()) as {
           status: "missing" | "building" | "ready" | "error";
